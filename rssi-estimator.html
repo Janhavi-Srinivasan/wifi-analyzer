@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RSSI Estimator</title>
+    <style>
+        /* Reset default styling */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Main container styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 600px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        input[type="number"],
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007BFF;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #0069d9;
+        }
+
+        .result {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #333;
+            text-align: center;
+        }
+
+        canvas {
+            display: block;
+            margin: 20px auto;
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>RSSI Estimator</h1>
+
+        <!-- RSSI Prediction Form -->
+        <form id="wifi-form">
+            <div class="form-group">
+                <label for="distance">Distance (m):</label>
+                <input type="number" id="distance" name="distance" placeholder="Enter distance" required>
+            </div>
+            <div class="form-group">
+                <label for="material">Material (wood/brick/metal):</label>
+                <input type="text" id="material" name="material" placeholder="Enter material" required>
+            </div>
+            <div class="form-group">
+                <label for="thickness">Thickness (cm):</label>
+                <input type="number" id="thickness" name="thickness" placeholder="Enter thickness" required>
+            </div>
+            <button type="button" class="btn" onclick="predictRSSI()">Predict RSSI</button>
+        </form>
+
+        <!-- Display RSSI Result -->
+        <div id="result" class="result"></div>
+
+        <!-- Chart for RSSI vs. Distance -->
+        <canvas id="rssiChart" width="400" height="200"></canvas>
+    </div>
+
+    <!-- External Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        // Global variables for the chart and constant TX power
+        let chart;
+        const TX_POWER_DBM = 20;
+
+        // RSSI Estimation Logic
+        function predictRSSI() {
+            const distance = parseFloat(document.getElementById('distance').value);
+            const material = document.getElementById('material').value.toLowerCase();
+            const thickness = parseFloat(document.getElementById('thickness').value);
+
+            if (isNaN(distance) || isNaN(thickness) || (material !== 'wood' && material !== 'brick' && material !== 'metal')) {
+                document.getElementById('result').innerHTML = "Please enter valid values for distance, material, and thickness.";
+                return;
+            }
+
+            let attenuation;
+            if (material === 'wood') {
+                attenuation = 2 * thickness;
+            } else if (material === 'brick') {
+                attenuation = 4 * thickness;
+            } else if (material === 'metal') {
+                attenuation = 10 * thickness;
+            }
+
+            const rssi = TX_POWER_DBM - (20 * Math.log10(distance) + attenuation);
+            document.getElementById('result').innerHTML = `Predicted RSSI: ${rssi.toFixed(2)} dBm`;
+
+            plotGraph(material, thickness, attenuation);
+        }
+
+        // Plot RSSI vs Distance
+        function plotGraph(material, thickness, attenuation) {
+            let distances = [];
+            let rssis = [];
+
+            for (let d = 1; d <= 100; d++) {
+                const rssi = TX_POWER_DBM - (20 * Math.log10(d) + attenuation);
+                distances.push(d);
+                rssis.push(rssi);
+            }
+
+            if (chart) {
+                chart.destroy();
+            }
+
+            const ctx = document.getElementById('rssiChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: distances,
+                    datasets: [{
+                        label: `RSSI vs Distance for ${material} (Thickness: ${thickness} cm)`,
+                        data: rssis,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        fill: true,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Distance (m)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'RSSI (dBm)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

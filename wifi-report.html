@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wi-Fi Signal Strength Monitor</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        .input-group {
+            margin: 10px 0;
+        }
+
+        /* Blue button style */
+        #start-btn {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        /* Button hover effect */
+        #start-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .chart-container {
+            width: 60%;
+            height: 300px;
+            margin: 0 auto;
+        }
+
+        #report-section {
+            margin-top: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px;
+        }
+
+        .btn {
+            background-color: #007BFF;
+            color: white;
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Wi-Fi Signal Strength Monitor</h1>
+    <div class="input-group">
+        <label for="duration">Enter duration (seconds):</label>
+        <input type="number" id="duration" placeholder="Duration in seconds" min="1">
+    </div>
+    <button id="start-btn" class="btn" onclick="startMonitoring()">Start Monitoring</button>
+    
+    <div class="chart-container">
+        <canvas id="signal-chart"></canvas>
+    </div>
+
+    <div id="report-section" class="hidden">
+        <h3>Report Generated</h3>
+        <textarea id="report-output" readonly></textarea>
+        <button class="btn" onclick="downloadReport()">Download Report</button>
+    </div>
+
+    <script>
+        let chart;
+        let signalData = [];
+        let reportData = [];
+        let intervalId;
+
+        // Initialize Chart.js graph
+        function initializeChart() {
+            const ctx = document.getElementById('signal-chart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Wi-Fi Signal Strength (dBm)',
+                        data: [],
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { 
+                            display: true, 
+                            title: { display: true, text: 'Time (s)' }
+                        },
+                        y: { 
+                            display: true, 
+                            title: { display: true, text: 'Signal Strength (dBm)' },
+                            min: -100, // Assuming signal strength won't go below -100 dBm
+                            max: 0 // Assuming max signal strength is 0 dBm
+                        }
+                    }
+                }
+            });
+        }
+
+        // Start Wi-Fi monitoring based on user-defined duration
+        function startMonitoring() {
+            const duration = parseInt(document.getElementById('duration').value, 10);
+            if (isNaN(duration) || duration <= 0) {
+                alert("Please enter a valid duration.");
+                return;
+            }
+
+            // Reset chart and data
+            signalData = [];
+            reportData = [];
+            chart.data.labels = [];
+            chart.data.datasets[0].data = [];
+            chart.update();
+
+            document.getElementById('report-section').classList.add('hidden');
+            
+            // Start monitoring the Wi-Fi signal every second
+            let secondsElapsed = 0;
+            intervalId = setInterval(() => {
+                if (secondsElapsed >= duration) {
+                    clearInterval(intervalId);
+                    generateReport();
+                    return;
+                }
+                
+                secondsElapsed++;
+                updateChart(secondsElapsed);
+            }, 1000);
+        }
+
+        // Update chart with new data every second
+        function updateChart(time) {
+            const signalStrength = getWiFiSignalStrength();
+            signalData.push(signalStrength);
+            reportData.push(`Time: ${time}s, Signal Strength: ${signalStrength} dBm`);
+
+            chart.data.labels.push(time);
+            chart.data.datasets[0].data.push(signalStrength);
+            chart.update();
+        }
+
+        // Fetch the current Wi-Fi signal strength (dummy function for now)
+        function getWiFiSignalStrength() {
+            // Replace this with actual logic to fetch signal strength
+            // This can be done via an API call or native app feature
+            return Math.floor(Math.random() * 100) - 100; // Random between -100 and 0 dBm
+        }
+
+        // Generate the report after monitoring is done
+        function generateReport() {
+            const reportOutput = document.getElementById('report-output');
+            reportOutput.value = reportData.join("\n");
+
+            document.getElementById('report-section').classList.remove('hidden');
+        }
+
+        // Download the report as a text file
+        function downloadReport() {
+            const blob = new Blob([document.getElementById('report-output').value], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'wifi_signal_report.txt';
+            link.click();
+        }
+
+        // Initialize the chart on page load
+        window.onload = initializeChart;
+    </script>
+</body>
+</html>

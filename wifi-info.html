@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wi-Fi Information</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 20px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: left;
+        }
+        .wifi-info {
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Wi-Fi Information</h1>
+
+    <!-- Button to get Wi-Fi info -->
+    <button id="fetchWiFiInfo">Get Wi-Fi Info</button>
+
+    <!-- Button to get connected devices -->
+    <button id="fetchConnectedDevices">Get Connected Devices</button>
+
+    <!-- Output sections for Wi-Fi info and connected devices -->
+    <pre id="wifiInfoOutput">Click the button to retrieve Wi-Fi information.</pre>
+    <pre id="connectedDevicesOutput">Click the button to retrieve connected devices information.</pre>
+
+    <script>
+        // Event listener for fetching Wi-Fi info
+        document.getElementById('fetchWiFiInfo').addEventListener('click', () => {
+            fetch('/wifi-info')
+                .then(response => response.text())
+                .then(data => {
+                    // Display the fetched Wi-Fi information
+                    document.getElementById('wifiInfoOutput').textContent = data;
+                })
+                .catch(error => {
+                    document.getElementById('wifiInfoOutput').textContent = 'Error fetching Wi-Fi info: ' + error;
+                });
+        });
+
+        // Event listener for fetching connected devices info
+        document.getElementById('fetchConnectedDevices').addEventListener('click', () => {
+            fetch('/connected-devices')
+                .then(response => response.text())
+                .then(data => {
+                    // Display the fetched connected devices information
+                    document.getElementById('connectedDevicesOutput').textContent = data;
+                })
+                .catch(error => {
+                    document.getElementById('connectedDevicesOutput').textContent = 'Error fetching connected devices info: ' + error;
+                });
+        });
+    </script>
+</body>
+</html>

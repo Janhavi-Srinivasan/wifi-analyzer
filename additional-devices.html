@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculate Signal Strength</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        button {
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        input {
+            padding: 10px;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Calculate Signal Strength</h1>
+
+    <button id="fetchInfo">Get Wi-Fi Info</button>
+    <pre id="infoOutput">Click the button to retrieve Wi-Fi information and calculate signal strength.</pre>
+
+    <h3>Adjust Devices</h3>
+    <input type="number" id="additionalDevices" placeholder="Number of additional devices" min="0">
+    <button id="calculateSignal">Calculate Signal Strength</button>
+
+    <script>
+        // Variables to store the initial signal strength and the number of connected devices
+        let initialSignalStrength = 75; // Example value for initial signal strength (in dBm)
+        let currentConnectedDevices = 0;
+
+        // Event listener for the 'Get Wi-Fi Info' button
+        document.getElementById('fetchInfo').addEventListener('click', function() {
+            // Simulating fetching Wi-Fi info (replace with actual data retrieval logic if available)
+
+            // Clear previous output and display initial signal strength
+            document.getElementById('infoOutput').textContent = `Initial Signal Strength: ${initialSignalStrength} dBm\n`;
+        });
+
+        // Event listener for the 'Calculate Signal Strength' button
+        document.getElementById('calculateSignal').addEventListener('click', function() {
+            // Get the number of additional devices entered by the user
+            const additionalDevices = parseInt(document.getElementById('additionalDevices').value);
+
+            if (!isNaN(additionalDevices)) {
+                // Adjust the number of connected devices based on the input
+                currentConnectedDevices += additionalDevices;
+
+                // Call the function to calculate the adjusted signal strength
+                calculateAdjustedSignalStrength();
+            } else {
+                document.getElementById('infoOutput').textContent = 'Please enter a valid number of additional devices.';
+            }
+        });
+
+        // Function to calculate adjusted signal strength based on the number of connected devices
+        function calculateAdjustedSignalStrength() {
+            const signalLossPerDevice = 2; // dBm lost per additional device
+
+            // Calculate the new signal strength after adding devices
+            const newSignalStrength = initialSignalStrength - (signalLossPerDevice * currentConnectedDevices);
+            const adjustedSignalStrength = Math.max(newSignalStrength, 0); // Ensure signal strength doesn't go below 0
+
+            // Display the adjusted signal strength after adding devices
+            document.getElementById('infoOutput').textContent += `\nSignal Strength after adding ${currentConnectedDevices} devices: ${adjustedSignalStrength.toFixed(2)} dBm\n`;
+        }
+    </script>
+
+</body>
+</html>
