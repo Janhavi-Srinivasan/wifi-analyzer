@@ -1,25 +1,26 @@
+// server.js
 const express = require('express');
 const { exec } = require('child_process');
 const path = require('path');
 const app = express();
 const PORT = 3001;
 
-// Serve static HTML file from the current directory
-app.use(express.static(path.join(__dirname)));
+// Serve static files from the current directory
+app.use(express.static(__dirname));
+
+// Serve the main HTML file for the root route
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 // Endpoint to fetch Wi-Fi info
 app.get('/wifi-info', (req, res) => {
     exec('netsh wlan show interfaces', (error, stdout, stderr) => {
         if (error) {
-            console.error(`Error executing command: ${stderr}`);
-            return res.status(500).send(`Error fetching Wi-Fi info: ${stderr}`);
+            console.error(`Error executing command: ${error}`);
+            return res.status(500).json({ error: 'Error fetching Wi-Fi info' });
         }
-
-        // Example regex to extract max devices (adjust based on actual output)
-        const maxDevicesMatch = stdout.match(/Max\s+Clients\s*:\s*(\d+)/);
-        const maxDevices = maxDevicesMatch ? maxDevicesMatch[1] : 'Unknown';
-
-        res.send(`<pre>${stdout}</pre>\n\nMaximum allowed devices: ${maxDevices}`);
+        res.json({ data: stdout });
     });
 });
 
@@ -27,40 +28,30 @@ app.get('/wifi-info', (req, res) => {
 app.get('/connected-devices', (req, res) => {
     exec('arp -a', (error, stdout, stderr) => {
         if (error) {
-            console.error(`Error executing command: ${stderr}`);
-            return res.status(500).send(`Error fetching connected devices: ${stderr}`);
+            console.error(`Error executing command: ${error}`);
+            return res.status(500).json({ error: 'Error fetching connected devices' });
         }
 
-        // Split the output into lines and parse each line for relevant information
         const lines = stdout.split('\n');
         const devices = lines
-            .filter(line => line.includes('dynamic')) // Filter out only dynamic devices
+            .filter(line => line.includes('dynamic'))
             .map(line => {
-                // Regex to extract IP address, MAC address, and device type
                 const match = line.match(/\? \(([\d\.]+)\)\s+([a-fA-F0-9:-]+)\s+([a-zA-Z]+)/);
                 if (match) {
                     return {
-                        ipAddress: match[1],      // IP address
-                        macAddress: match[2],     // MAC address
-                        type: match[3]            // Device type (static/dynamic)
+                        ipAddress: match[1],
+                        macAddress: match[2],
+                        type: match[3]
                     };
                 }
-            }).filter(device => device); // Remove any null values
+                return null;
+            })
+            .filter(Boolean);
 
-        // Prepare the response with detailed device info
-        if (devices.length > 0) {
-            let response = `Currently connected devices: ${devices.length}\n\n`;
-            devices.forEach(device => {
-                response += `IP Address: ${device.ipAddress}\nMAC Address: ${device.macAddress}\nType: ${device.type}\n\n`;
-            });
-            res.send(response);
-        } else {
-            res.send('No devices currently connected.');
-        }
+        res.json({ devices });
     });
 });
 
-// Start the server
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
